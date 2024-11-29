@@ -11,6 +11,8 @@
     <script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.js'></script>
     <link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.css'
         type='text/css' />
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6.5.0/turf.min.js"></script>
+
     <link rel="preconnect" href="https://rsms.me/">
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
     <style>
@@ -375,6 +377,33 @@
             text-decoration: none;
             cursor: pointer;
         }
+
+        #polygon-stats {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            z-index: 1100;
+            background: rgba(255, 255, 255, 1);
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.3);
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+        }
+
+        #polygon-stats h4 {
+            margin: 0 0 10px 0;
+        }
+
+        #polygon-stats ul {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        #polygon-stats li {
+            margin: 5px 0;
+        }
     </style>
 </head>
 
@@ -384,9 +413,11 @@
         <div class="welcome-modal-content">
             <span class="close">&times;</span>
             <h1>Welcome to MapMirror, <br>a simple tool to compare geographic sizes.</h1>
-            <h3>Left side is your reference/input, Right side is the comparison/output. Tap on the polygon button, then tap to create your shape on the map. Double click on the last point, or tap on the right-hand map.
+            <h3>Left side is your reference/input, Right side is the comparison/output. Tap on the polygon button, then
+                tap to create your shape on the map. Double click on the last point, or tap on the right-hand map.
             </h3>
-            <h3>Pan and zoom on the right-hand map to compare the polygon in different areas. <br>You can use the slider to rotate the polygon.</h3>
+            <h3>Pan and zoom on the right-hand map to compare the polygon in different areas. <br>You can use the slider
+                to rotate the polygon.</h3>
         </div>
     </div>
     <!-- End Modal Content -->
@@ -405,6 +436,15 @@
     <div id="rotation-slider-container">
         <input type="range" id="rotation-slider" min="0" max="360" value="0" step="1" />
     </div>
+    <div id="polygon-stats">
+        <h4>Polygon Statistics</h4>
+        <ul>
+            <li id="segment-lengths">Segment Lengths: --</li>
+            <li id="perimeter">Perimeter: --</li>
+            <li id="area">Area: --</li>
+        </ul>
+    </div>
+
     <script>
         mapboxgl.accessToken = 'pk.eyJ1IjoiZHVueCIsImEiOiJja2UzYW96a2YwNGswMnJwbGJvcnRtejZpIn0.1hCPG-T_q9josI-gyJJUAw';
 
@@ -661,6 +701,49 @@
             }
         };
 
+// --------------POLYGON STATS ---------------
+function updatePolygonStats() {
+    const features = draw.getAll(); // Get all drawn features
+    if (!features.features.length) {
+        // If no polygon exists, reset the stats
+        document.getElementById('segment-lengths').textContent = 'Segment Lengths: --';
+        document.getElementById('perimeter').textContent = 'Perimeter: --';
+        document.getElementById('area').textContent = 'Area: --';
+        return;
+    }
+
+    const polygon = features.features[0]; // Use the first polygon
+    const coordinates = polygon.geometry.coordinates[0]; // Get the outer ring
+
+    // Calculate the length of each segment
+    let segmentLengths = [];
+    for (let i = 0; i < coordinates.length - 1; i++) {
+        const segment = turf.lineString([coordinates[i], coordinates[i + 1]]);
+        const length = turf.length(segment, { units: 'meters' }); // Length in meters
+        segmentLengths.push(length.toFixed(2));
+    }
+
+    // Calculate the perimeter (sum of segment lengths)
+    const perimeter = segmentLengths.reduce((sum, length) => sum + parseFloat(length), 0);
+
+    // Calculate the area in square meters
+    const area = turf.area(polygon);
+    const areaInHectares = area / 10000;
+
+    // Update the stats display
+    document.getElementById('segment-lengths').textContent = `Segment Lengths: ${segmentLengths.join(', ')} m`;
+    document.getElementById('perimeter').textContent = `Perimeter: ${perimeter.toFixed(2)} m`;
+    document.getElementById('area').textContent = `Area: ${area.toFixed(2)} m² or ${areaInHectares.toFixed(2)} ha`;
+}
+
+// Attach the update function to draw events
+map1.on('load', () => {
+    map1.on('draw.create', updatePolygonStats);
+    map1.on('draw.update', updatePolygonStats);
+    map1.on('draw.delete', updatePolygonStats);
+});
+
+// -------------/POLYGON STATS ---------------
 
     </script>
 </body>
