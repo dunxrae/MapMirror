@@ -312,6 +312,13 @@ body {
     cursor: pointer;
 }
 
+@media (max-width: 600px),
+(max-width: 600px) and (min-resolution: 192dpi) {
+    .welcome-modal-content {
+        width: 100%;
+    }
+}
+
 /* ---------- /Modal styles ---------- */
 
 /* ---------- Polygon Stats ---------- */
