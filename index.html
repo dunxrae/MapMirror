@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>MAPMIRROR</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="favicon.png" type="image/x-icon">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
+    <script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.js'></script>
+    <link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.css'
+        type='text/css' />
+    <link rel="preconnect" href="https://rsms.me/">
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    <style>
+        :root {
+            font-family: Inter, sans-serif;
+            font-feature-settings: 'liga' 1, 'calt' 1;
+            /* fix for Chrome */
+        }
+
+        @supports (font-variation-settings: normal) {
+            :root {
+                font-family: InterVariable, sans-serif;
+            }
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        #map1,
+        #map2 {
+            width: 50%;
+            height: 100vh;
+            float: left;
+        }
+
+        .map-container {
+            display: flex;
+        }
+
+        .controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1;
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        #top-left-container {
+            position: absolute;
+            top: 10px;
+            /* Position from the top */
+            left: 10px;
+            /* Position from the left */
+            z-index: 1100;
+            /* Ensure it is above everything */
+            display: flex;
+            /* Use flexbox for alignment */
+            align-items: center;
+            /* Vertically center the items */
+            gap: 10px;
+            /* Space between the button and text */
+        }
+
+        #top-left-button {
+            position: fixed;
+            /* Ensure it stays in the top-left corner */
+            top: 10px;
+            /* Position from the top */
+            left: 10px;
+            /* Position from the left */
+            z-index: 1100;
+            /* Ensure it is above all map elements */
+            width: 50px;
+            /* Button width */
+            height: 50px;
+            /* Button height */
+            background-color: #fff;
+            /* Optional background color */
+            border-radius: 5px;
+            /* Rounded corners */
+            box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.3);
+            /* Add subtle shadow */
+            display: flex;
+            justify-content: center;
+            /* Center the icon */
+            align-items: center;
+            /* Center the icon */
+            text-decoration: none;
+            /* Remove link underline */
+            pointer-events: auto;
+            /* Ensure it is clickable */
+        }
+
+        #top-left-button img {
+            width: 30px;
+            /* Icon width */
+            height: 30px;
+            /* Icon height */
+        }
+
+        #top-left-button:hover {
+            background-color: #eee;
+            /* Light gray on hover */
+            
+        }
+
+
+        #top-left-text {
+            padding-left: 70px;
+            padding-top: 14px;
+            font-size: 20px;
+            /* Adjust text size */
+            color: #75a771;
+            /* Text color */
+            text-shadow: #333;
+            font-family: Inter, sans-serif;
+            /* Font style */
+            font-weight: 900;
+        }
+
+        .controls button {
+            margin: 5px;
+        }
+
+        .mapboxgl-ctrl-top-left {
+            top: 60px;
+            /* Move controls down to avoid overlapping with the custom button */
+            left: 0px;
+            /* Keep them aligned with the left */
+        }
+
+
+        .mapbox-gl-draw_ctrl-draw-btn.mapbox-gl-draw_polygon {
+            width: 50px;
+            /* Adjust button width */
+            height: 50px;
+            /* Adjust button height */
+            font-size: 18px;
+            /* Adjust icon size */
+        }
+
+        .mapbox-gl-draw_ctrl-draw-btn.mapbox-gl-draw_trash {
+            width: 50px;
+            /* Adjust trash button width */
+            height: 50px;
+            /* Adjust trash button height */
+            font-size: 18px;
+            /* Adjust trash icon size */
+        }
+
+        #rotation-slider-container {
+            position: absolute;
+            top: 10px;
+            left: 51%;
+            z-index: 1000;
+            width: 50px;
+            /* Ensure it appears above the map */
+            background: rgba(255, 255, 255, 1);
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        #rotation-slider {
+            writing-mode: bt-lr;
+            /* Rotate the slider vertically */
+            -webkit-appearance: slider-vertical;
+            /* Ensure compatibility for Chrome/Safari */
+            width: 8px;
+            /* Thickness of the slider */
+            height: 150px;
+            /* Height of the slider */
+            background: #ddd;
+            outline: none;
+            border-radius: 5px;
+        }
+
+        #rotation-slider-container {
+            position: absolute;
+            top: 10px;
+            left: 51%;
+            z-index: 1001;
+            /* Place above the canvas */
+            padding: 10px;
+            background: rgba(255, 255, 255, 1);
+            border-radius: 8px;
+            box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.3);
+            display: flex;
+            /* Flexbox layout for centering */
+            justify-content: center;
+            align-items: center;
+            height: 180px;
+            /* Match the rotated slider height */
+        }
+
+        #rotation-slider {
+            transform: rotate(-90deg);
+            /* Rotate the slider to make it vertical */
+            transform-origin: 50% 50%;
+            /* Ensure the rotation happens around its center */
+            width: 150px;
+            /* Adjust width since it's now "rotated" */
+            height: 8px;
+            /* Thickness of the slider */
+            margin: 0;
+            /* Remove default margin */
+            appearance: none;
+            /* Reset browser styles for the slider */
+            background: #ddd;
+            /* Slider track color */
+            outline: none;
+            /* Remove focus outline */
+            border-radius: 5px;
+            /* Rounded track */
+            cursor: pointer;
+            /* Change cursor on hover */
+        }
+
+        #rotation-slider::-webkit-slider-thumb {
+            appearance: none;
+            /* Remove default styling */
+            width: 16px;
+            /* Size of the slider thumb */
+            height: 16px;
+            background: #555;
+            /* Thumb color */
+            border-radius: 50%;
+            /* Make thumb circular */
+            cursor: pointer;
+            /* Change cursor on hover */
+        }
+
+        #rotation-slider::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: #555;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        #rotation-slider::-ms-thumb {
+            width: 16px;
+            height: 16px;
+            background: #555;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .mapbox-satellite-toggle {
+            background-color: #fff;
+            /* White background */
+            color: #333;
+            /* Dark text */
+            font-size: 14px;
+            padding: 10px 15px;
+            width: 50px;
+            height: 50px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.2);
+            outline: none;
+            transition: background-color 0.2s ease;
+        }
+
+        .mapbox-satellite-toggle:hover {
+            background-color: #eee;
+            /* Light gray background on hover */
+        }
+
+        .mapboxgl-ctrl-group button {
+            background-color: #fff;
+            /* Button background color */
+            border: none;
+            /* Remove border */
+            border-radius: 5px;
+            /* Rounded corners */
+            top: 60px;
+            cursor: pointer;
+            /* Pointer cursor */
+            width: 50px;
+            /* Fixed button width */
+            height: 50px;
+            /* Fixed button height */
+            font-size: 14px;
+            /* Adjust font size for the icon */
+            display: flex;
+            /* Center content */
+            justify-content: center;
+            /* Horizontally center icon */
+            align-items: center;
+            /* Vertically center icon */
+            box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.3);
+            /* Add shadow */
+            outline: none;
+            /* Remove focus outline */
+            transition: background-color 0.2s ease;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="map-container">
+        <div id="map1"></div>
+        <div id="map2"></div>
+    </div>
+    <div class="controls">
+    </div>
+    <div id="top-left-container">
+        <a id="top-left-button" href="https://github.com/dunxrae/mapmirror" target="_blank">
+            <img src="favicon.png" alt="MM">
+        </a>
+        <span id="top-left-text">MAPMIRROR</span>
+    </div>
+    <div id="rotation-slider-container">
+        <input type="range" id="rotation-slider" min="0" max="360" value="0" step="1" />
+    </div>
+    <script>
+        mapboxgl.accessToken = 'pk.eyJ1IjoiZHVueCIsImEiOiJja2UzYW96a2YwNGswMnJwbGJvcnRtejZpIn0.1hCPG-T_q9josI-gyJJUAw';
+
+
+        // Initialize map1 (left map)
+        const map1 = new mapboxgl.Map({
+            container: 'map1',
+            style: 'mapbox://styles/mapbox/streets-v11',
+            center: [-75.6972, 45.4215], // Ottawa coordinates
+            zoom: 12
+        });
+
+        // Initialize map2 (right map)
+        const map2 = new mapboxgl.Map({
+            container: 'map2',
+            style: 'mapbox://styles/mapbox/streets-v11',
+            center: [-75.6972, 45.4215],
+            zoom: 12
+        });
+
+        // Add Mapbox Draw controls to map1
+        const draw = new MapboxDraw({
+            displayControlsDefault: true,
+            controls: {
+                polygon: true, // Enable polygon drawing
+                point: false,
+                line_string: false,
+                trash: true,    // Enable delete functionality
+                combine_features: false,
+                uncombine_features: false
+            }
+        });
+        map1.addControl(draw, 'top-left');
+
+        // -----------ROTATION------------
+        // Rotation angle in degrees
+        let rotationAngle = 0;
+
+        // Utility function: Convert degrees to radians
+        function degreesToRadians(degrees) {
+            return (degrees * Math.PI) / 180;
+        }
+
+        // Function to set the rotation angle and redraw the polygon
+        function setRotation(angle) {
+            rotationAngle = angle;
+            renderPolygonCentered(); // Redraw the polygon with the new rotation
+        }
+        // -----------/ROTATION------------
+
+
+        // Create and set up a fixed canvas overlay on map2
+        let canvas, context;
+
+        function setupCanvas() {
+            if (!canvas) {
+                canvas = document.createElement('canvas');
+                canvas.width = map2.getContainer().offsetWidth;
+                canvas.height = map2.getContainer().offsetHeight;
+                canvas.style.position = 'absolute';
+                canvas.style.top = 0;
+                canvas.style.left = 0;
+                canvas.style.pointerEvents = 'none'; // Prevent interactions with the canvas
+                map2.getContainer().appendChild(canvas);
+                context = canvas.getContext('2d');
+            }
+        }
+
+        function calculateCentroid(coordinates) {
+            let x = 0, y = 0, totalPoints = coordinates.length;
+
+            coordinates.forEach(([lng, lat]) => {
+                x += lng;
+                y += lat;
+            });
+
+            return [x / totalPoints, y / totalPoints]; // Return the centroid [lng, lat]
+        }
+
+
+        // Function to render polygons, always centered and scaled
+        function renderPolygonCentered() {
+            if (!context) return;
+
+            const features = draw.getAll(); // Get the current polygon from map1
+            if (!features.features.length) {
+                // Clear the canvas if no polygons exist
+                context.clearRect(0, 0, canvas.width, canvas.height);
+                return;
+            }
+
+            const polygon = features.features[0]; // Use the first polygon for now
+            const coordinates = polygon.geometry.coordinates[0]; // Get the outer ring
+
+            // Clear the canvas
+            context.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Calculate the centroid of the polygon
+            const [centroidLng, centroidLat] = calculateCentroid(coordinates);
+
+            // Get the screen center (fixed for rendering)
+            const screenCenter = { x: canvas.width / 2, y: canvas.height / 2 };
+
+            // Convert the rotation angle to radians
+            const angleRad = degreesToRadians(rotationAngle);
+
+            // Calculate the screen-space positions of the polygon vertices relative to the centroid
+            const projectedCentroid = map2.project([centroidLng, centroidLat]);
+
+            context.beginPath();
+            coordinates.forEach(([lng, lat], index) => {
+                // Project each vertex relative to the centroid
+                const point = map2.project([lng, lat]);
+
+                // Calculate offsets relative to the centroid in screen space
+                const offsetX = point.x - projectedCentroid.x;
+                const offsetY = point.y - projectedCentroid.y;
+
+                // Apply rotation around the centroid
+                const rotatedX =
+                    offsetX * Math.cos(angleRad) - offsetY * Math.sin(angleRad);
+                const rotatedY =
+                    offsetX * Math.sin(angleRad) + offsetY * Math.cos(angleRad);
+
+                // Draw the polygon relative to the fixed screen center
+                if (index === 0) {
+                    context.moveTo(screenCenter.x + rotatedX, screenCenter.y + rotatedY);
+                } else {
+                    context.lineTo(screenCenter.x + rotatedX, screenCenter.y + rotatedY);
+                }
+            });
+            context.closePath();
+
+            // Fill the polygon
+            context.fillStyle = 'rgba(136, 136, 136, 0.5)';
+            context.fill();
+
+            // Draw the outline
+            context.strokeStyle = '#000';
+            context.lineWidth = 2;
+            context.stroke();
+        }
+
+
+        // Attach event listeners for polygon updates
+        map1.on('load', () => {
+            setupCanvas();
+            map1.on('draw.create', renderPolygonCentered);
+            map1.on('draw.update', renderPolygonCentered);
+            map1.on('draw.delete', renderPolygonCentered);
+        });
+
+        // Get the slider element
+        // Add an event listener to update rotation dynamically
+        const rotationSlider = document.getElementById('rotation-slider');
+
+        if (!rotationSlider) {
+            console.error('Rotation slider not found');
+        } else {
+            rotationSlider.addEventListener('input', (event) => {
+                const angle = parseInt(event.target.value, 10); // Get the slider value
+                console.log(`Slider value: ${angle}`); // Debug
+                setRotation(angle); // Update the rotation angle
+            });
+        }
+
+
+
+
+        // Redraw the polygon when map2 zooms
+        map2.on('zoom', renderPolygonCentered);
+
+        // Resize the canvas when map2 resizes
+        map2.on('resize', () => {
+            canvas.width = map2.getContainer().offsetWidth;
+            canvas.height = map2.getContainer().offsetHeight;
+            renderPolygonCentered(); // Redraw after resizing
+        });
+
+
+
+
+        // Add a custom control to toggle satellite imagery
+        class SatelliteToggleControl {
+            onAdd(map) {
+                this.map = map;
+
+                // Create the container for the button
+                this.container = document.createElement('div');
+                this.container.className = 'mapboxgl-ctrl mapboxgl-ctrl-group';
+
+                // Create the button
+                this.button = document.createElement('button');
+                this.button.type = 'button';
+                this.button.className = 'mapboxgl-ctrl-icon';
+                this.button.title = 'Toggle Satellite Imagery';
+
+                // Use an emoji or SVG for the icon (e.g., 🛰️)
+                this.button.innerHTML = '🛰️';
+
+                // Add event listener to toggle styles
+                this.button.addEventListener('click', () => {
+                    const currentStyle = map1.getStyle().sprite; // Get current map style
+                    if (currentStyle.includes('satellite')) {
+                        this.switchToDefault();
+                    } else {
+                        this.switchToSatellite();
+                    }
+                });
+
+                // Append the button to the container
+                this.container.appendChild(this.button);
+
+                return this.container;
+            }
+
+            onRemove() {
+                this.container.parentNode.removeChild(this.container);
+                this.map = undefined;
+            }
+
+            // Switch both maps to satellite imagery
+            switchToSatellite() {
+                map1.setStyle('mapbox://styles/mapbox/satellite-v9');
+                map2.setStyle('mapbox://styles/mapbox/satellite-v9');
+            }
+
+            // Switch both maps to the default style
+            switchToDefault() {
+                map1.setStyle('mapbox://styles/mapbox/streets-v11');
+                map2.setStyle('mapbox://styles/mapbox/streets-v11');
+            }
+        }
+
+        // Add the custom control to both maps
+        const satelliteControl = new SatelliteToggleControl();
+        map1.addControl(satelliteControl, 'top-left');
+
+
+
+
+    </script>
+</body>
+
+</html>
