@@ -26,6 +26,27 @@
             }
         }
 
+        a:link {
+            text-decoration: none;
+            color: #ffffff;
+            outline: none;
+        }
+
+        a:hover {
+            text-decoration: none;
+            color: #ffffff;
+        }
+
+        a:active {
+            text-decoration: none;
+            color: #ffffff;
+        }
+
+        a:visited {
+            text-decoration: none;
+            color: #ffffff;
+        }
+
         body {
             margin: 0;
             padding: 0;
@@ -108,7 +129,7 @@
         #top-left-button:hover {
             background-color: #eee;
             /* Light gray on hover */
-            
+
         }
 
 
@@ -303,10 +324,84 @@
             /* Remove focus outline */
             transition: background-color 0.2s ease;
         }
+
+        /* Modal styles */
+
+        .mapboxgl-popup-close-button {
+            display: none;
+        }
+
+        .welcome-modal {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: fixed;
+            z-index: 1111;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        .welcome-modal-content {
+            background-color: rgba(10, 10, 10, 0.5);
+            color: #fff;
+            padding: 20px 40px;
+            /* border: 1px solid #888; */
+            width: 80%;
+            min-width: 50%;
+            max-width: 1000px;
+            /* border-radius: 10px; */
+            /* box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); */
+            margin: auto;
+            /* Center the modal */
+            display: flex;
+            flex-direction: column;
+            align-items: left;
+            transform: translateY(-60%);
+            /* Adjust for perfect vertical centering */
+            position: relative;
+            top: 50%;
+        }
+
+
+        .welcome-modal-content {
+            transform: translateY(0%);
+            top: 0%;
+            height: 30%;
+            position: sticky;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .modal-close:hover,
+        .modal-close:focus {
+            color: #999;
+            text-decoration: none;
+            cursor: pointer;
+        }
     </style>
 </head>
 
 <body>
+    <!-- Modal content -->
+    <div id="welcomeModal" class="welcome-modal">
+        <div class="welcome-modal-content">
+            <span class="close">&times;</span>
+            <h1>Welcome to MapMirror, <br>a simple tool to compare geographic sizes.</h1>
+            <h3>Left side is your reference/input, Right side is the comparison/output. Tap on the polygon button, then tap to create your shape on the map. Double click on the last point, or tap on the right-hand map.
+            </h3>
+            <h3>Pan and zoom on the right-hand map to compare the polygon in different areas. <br>You can use the slider to rotate the polygon.</h3>
+        </div>
+    </div>
+    <!-- End Modal Content -->
     <div class="map-container">
         <div id="map1"></div>
         <div id="map2"></div>
@@ -561,6 +656,22 @@
         map1.addControl(satelliteControl, 'top-left');
 
 
+        // -------- WELCOME MODAL ----------
+
+        const modal = document.getElementById("welcomeModal");
+        const span = document.getElementsByClassName("close")[0];
+
+        // Close the modal when the user clicks on the close button
+        span.onclick = function () {
+            modal.style.display = "none";
+        };
+
+        // Also close the modal if the user clicks outside of it
+        window.onclick = function (event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        };
 
 
     </script>
